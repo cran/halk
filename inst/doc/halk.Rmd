@@ -1,0 +1,65 @@
+---
+title: "Introduction to *halk*"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{halk}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup, echo = FALSE}
+library(halk)
+```
+
+The halk package is a suite of functions built for estimating age of organisms (namely fish) based on empirically measured size. One main implementation of this is a hierarchical age-length key, also known as a HALK.
+
+## What the heck is a HALK
+
+The HALK is a data-borrowing age estimation method primarily used in fisheries ecology. It extends the traditional method of an age-length key (ALK) by borrowing data across time, space, or any other nested level to create nested ALKs used to estimate age of fish from empirically measured length. For example, if you have survey data for which length is measured, but no age sub-samples taken, you can still get some information on age by borrowing data from the same lake in different years, or different nearby lakes.
+
+## Implementing a HALK
+
+A HALK is created by passing paired age-length data to the `make_halk` function. There are two main arguments to this function: `data`, which represents the paired age-length data, and `levels`, which is a character vector of the column names that represent the different nested levels in the HALK. For example, in the following data, you can pass any combination of `spp`, `county`, and `waterbody` as levels:
+
+```{r wb_spp_data_example, echo = FALSE}
+head(wb_spp_laa_data)
+```
+
+This will fit a HALK based on the user specified levels. Say that we include `spp`, `county` and `waterbody` as levels to the function `make_halk`. This will create an ALK for each waterbody, each county, and then a species-wide global ALK.
+
+```{r spp_county_wb_alk}
+spp_county_wb_alk <- make_halk(
+  wb_spp_laa_data, 
+  levels = c("spp", "county", "waterbody")
+)
+head(spp_county_wb_alk)
+```
+
+The returned tibble contains a list-column named `alk` that stores an ALK for each level provided to the `levels` argument (note that the ALK for `county_A` has an NA in the waterbody column indicating that this is a county-wide ALK). Each object in this list-column is simply an ALK that is created using all data from the level indicated by the respective non-NA columns in that row.
+
+```{r specific_alk_example}
+# Bluegill ALK for lake_a in county_A, from row #1 above
+head(spp_county_wb_alk$alk[[1]])
+```
+
+## Estimating ages from a HALK
+
+The halk package makes it easy to get age assigment from a HALK using the `assign_ages` function. Once you have created a HALK, simply pass it to `assign_ages` along with the length data you wish to have ages estimated on---make sure that your length data has all columns used in the `levels` argument used in `make_halk`.
+
+```{r assign_ages_example} 
+est_ages <- assign_ages(wb_spp_length_data, spp_county_wb_alk)
+head(est_ages)
+```
+
+Notice that there are lakes in the `est_ages` object that were not present in the original length-at-age data used to create the `spp_county_wb_alk` object. Ages for these lengths are estimated at the county-wide level.
+
+```{r missing_lake_example}
+head(est_ages[est_ages$waterbody == "lake_x", ])
+```
