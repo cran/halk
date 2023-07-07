@@ -258,7 +258,7 @@ min_count_laa_data <- function(data, sub_levels = NULL,
       data <-
         data %>%
         dplyr::inner_join(laa_counts, by = sub_levels) %>%
-        dplyr::select(-.data$n)
+        dplyr::select(-"n")
     }
   }
   if (!is.null(min_age_sample_size)) {
@@ -281,7 +281,7 @@ min_count_laa_data <- function(data, sub_levels = NULL,
     data <-
       data %>%
       dplyr::inner_join(laa_counts, by = c(sub_levels, "age")) %>%
-      dplyr::select(-.data$n)
+      dplyr::select(-"n")
   }
   if (nrow(data) == 0) {
     return(NULL)
@@ -313,7 +313,7 @@ min_age_groups <- function(data, sub_levels = NULL, min_age_grps) {
     temp_age_data <-
       data %>%
       dplyr::inner_join(age_grp_counts, by = sub_levels) %>%
-      dplyr::select(-.data$n_age_grps)
+      dplyr::select(-"n_age_grps")
     if (nrow(temp_age_data) == 0) {
       return(NULL)
     } else {
@@ -344,7 +344,7 @@ bin_lengths <- function(x, binwidth, include_upper = FALSE, ...) {
   if (length(x) == 0) {
     stop("You have no length data to bin")
   }
-  bins <- seq(0, ceiling(max(x) + binwidth), by = binwidth)
+  bins <- seq(0, ceiling(max(x, na.rm = TRUE) + binwidth), by = binwidth)
   if (include_upper) {
     cut_bins <- cut(x, bins, right = FALSE, ...)
     bin_levels <- levels(cut_bins)
@@ -377,10 +377,9 @@ bin_lengths <- function(x, binwidth, include_upper = FALSE, ...) {
 #' @param min_age_sample_size Only applicable to alk models. The minimum
 #' number of samples that must be in each age group in order to create an alk
 #' @param min_total_sample_size Only applicable to alk models. The minimum
-#' number of samples that must be in data (within level) in order to create an
-#' alk
+#' number of samples that must be in data in order to create an alk
 #' @param min_age_groups Only applicable to alk models. The minimum number of
-#' age groups that must be in data (within level) in order to create an alk
+#' age groups that must be in data in order to create an alk
 #' @param numcol Character string naming the column that holds numbers data
 #' @param warnings Logical. Display warnings (TRUE, default)
 #'
@@ -401,7 +400,7 @@ make_alk <- function(laa_data,
                      numcol = NULL,
                      min_age_sample_size = 5,
                      min_total_sample_size =
-                       min_age_sample_size * min_age_groups,
+                      min_age_sample_size * min_age_groups,
                      min_age_groups = 5,
                      warnings = TRUE) {
 
@@ -412,6 +411,7 @@ make_alk <- function(laa_data,
   laa_data <-
     laa_data %>%
     rename_laa_cols(size_col = sizecol, age_col = agecol, num_col = numcol) %>%
+    sanitize_laa_data() %>%
     adjust_plus_min_ages_df(minage = min_age, pls_grp = plus_group) %>%
     min_age_groups(sub_levels = NULL, min_age_grps = min_age_groups) %>%
     min_count_laa_data(
@@ -487,7 +487,7 @@ make_alk <- function(laa_data,
     dplyr::mutate(n = ifelse(is.na(.data$n), 0, .data$n)) %>%
     dplyr::group_by(.data$length) %>%
     dplyr::mutate(prop = .data$n / sum(.data$n)) %>%
-    dplyr::select(.data$age, .data$length, .data$prop) %>%
+    dplyr::select("age", "length", "prop") %>%
     dplyr::ungroup()
   if (!is.null(plus_group)) {
     age_props <-
@@ -569,6 +569,14 @@ rename_laa_cols <- function(data,
   if (!is.null(num_col)) {
     out <- rename_num_col(out, num_col, back = goback)
   }
+  return(out)
+}
+
+# simple helper function to remove NA values from length-at-age data
+sanitize_laa_data <- function(data) {
+  out <-
+    data %>%
+    dplyr::filter(!is.na(.data$length), !is.na(.data$age))
   return(out)
 }
 

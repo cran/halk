@@ -79,9 +79,17 @@ test_that("check_model_types returns correct names", {
   expect_error(check_model_type("foobar"))
 })
 
+test_that("sanitize_laa_data works as intended", {
+  test_dat <- data.frame(length = 1:3, age = 1:3)
+  na_test_dat <- data.frame(length = c(1:3, NA), age = c(NA, 1:3))
+  exp_na_test_dat <- data.frame(length = 2:3, age = 1:2)
+  expect_equal(sanitize_laa_data(test_dat), test_dat)
+  expect_equal(sanitize_laa_data(na_test_dat), exp_na_test_dat)
+})
+
 test_that("adjust_plus_min_ages_* functions correctly adjust age data", {
-  expect_equal(min(adjust_plus_min_ages(laa_data, minage = 3)), 3)
-  expect_equal(max(adjust_plus_min_ages(laa_data, pls_grp = 5)), 5)
+  expect_equal(min(adjust_plus_min_ages(laa_data, minage = 3)$age), 3)
+  expect_equal(max(adjust_plus_min_ages(laa_data, pls_grp = 5)$age), 5)
   expect_equal(min(adjust_plus_min_ages(0:10, minage = 2)), 2)
   expect_equal(max(adjust_plus_min_ages(0:10, pls_grp = 5)), 5)
 })
@@ -190,5 +198,17 @@ test_that("rename_size_col correctly specifies age columns", {
   orig_laa_data <- rename_size_col(renamed_size_data, "foo")
   expect_equal(names(renamed_size_data), c("age", "foo"))
   expect_equal(names(laa_data), names(orig_laa_data))
+})
+
+test_that("integral_quotient returns correct values", {
+  ref_curve_params <- list(linf = 60, k = 0.25, t0 = -0.5)
+  comp_curve_params <- list(linf = 62, k = 0.25, t0 = -0.4)
+  comp_curve2_params <- list(linf = 65, k = 0.25, t0 = -1)
+  expect_equal(
+    integral_quotient(ref_curve_params, comp_curve_params, 0, 10), 2.56
+  )
+  expect_equal(
+    integral_quotient(ref_curve_params, comp_curve2_params, 0, 10), 14.44
+  )
 })
 

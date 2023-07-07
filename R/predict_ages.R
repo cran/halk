@@ -69,8 +69,8 @@ predict.alk <- function(object, newdata,
           }
         })
       ) %>%
-      tidyr::unnest(cols = c(.data$data, .data$est.age)) %>%
-      dplyr::select(-.data$ages, -.data$n)
+      tidyr::unnest(cols = c("data", "est.age")) %>%
+      dplyr::select(-"ages", -"n")
     missing_ages <- dplyr::filter(out, is.na(.data$est.age))
     if (nrow(missing_ages) > 1) {
       warning(
@@ -87,8 +87,8 @@ predict.alk <- function(object, newdata,
       dplyr::group_by(.data$rounded_length) %>%
       # get the total number in each rounded length
       dplyr::mutate(n = dplyr::n()) %>%
-      tidyr::nest(data = -.data$rounded_length) %>%
-      dplyr::left_join(object, by = c(rounded_length = "length")) %>%
+      tidyr::nest(data = -"rounded_length") %>%
+      dplyr::left_join(object, by = c("rounded_length" = "length")) %>%
       tidyr::nest(ages = tidyselect::starts_with("age")) %>%
       dplyr::ungroup() %>%
       dplyr::mutate(est.age = purrr::map2(
@@ -119,8 +119,8 @@ predict.alk <- function(object, newdata,
           }
         })
       ) %>%
-      tidyr::unnest(cols = c(.data$data, .data$est.age)) %>%
-      dplyr::select(-.data$ages, -.data$n)
+      tidyr::unnest(cols = c("data", "est.age")) %>%
+      dplyr::select(-"ages", -"n")
     missing_ages <- dplyr::filter(out, is.na(.data$est.age))
     out <- dplyr::filter(out, !is.na(.data$est.age))
     if (nrow(missing_ages) > 0) {
@@ -133,7 +133,9 @@ predict.alk <- function(object, newdata,
         non_missing_ages <-
           missing_ages %>%
           dplyr::mutate(est.age = purrr::map_dbl(.data$length, function(x) {
-            if (x < minlen) {
+            if (is.na(x)) {
+              return(NA)
+            } else if (x < minlen) {
               return(min(normal_params$age))
             } else if (x > maxlen) {
               return(max(normal_params$age))
@@ -159,7 +161,7 @@ predict.alk <- function(object, newdata,
       out <- dplyr::bind_rows(out, non_missing_ages)
     }
     out <-
-      dplyr::select(out, -.data$rounded_length) %>%
+      dplyr::select(out, -"rounded_length") %>%
       rename_laa_cols(
         size_col = size_col,
         age_col = age_col,
@@ -169,8 +171,8 @@ predict.alk <- function(object, newdata,
   out <-
     out %>%
     dplyr::mutate(alk.n = attr(object, "alk_n")) %>%
-    dplyr::arrange(.data$order_vector) %>%
-    dplyr::select(-.data$order_vector)
+    dplyr::arrange("order_vector") %>%
+    dplyr::select(-"order_vector")
   if (newdata_as_vector) {
     out <- out$est.age
   }
@@ -229,7 +231,7 @@ assign_ages.halk_fit <- function(newdata, object, ...) {
         tidyr::nest(data = tidyselect::all_of(temp_nonlevel_names)) %>%
         dplyr::inner_join(
           level_alks %>%
-            dplyr::select(dplyr::all_of(temp_levels), .data$alk) %>%
+            dplyr::select(dplyr::all_of(temp_levels), "alk") %>%
             dplyr::distinct(),
           by = temp_levels
         )
@@ -239,7 +241,7 @@ assign_ages.halk_fit <- function(newdata, object, ...) {
         level_alks <-
           level_alks %>%
           dplyr::filter(is.na(!!rlang::sym(levels[i]))) %>%
-          dplyr::select(tidyselect::all_of(temp_levels), .data$alk)
+          dplyr::select(tidyselect::all_of(temp_levels), "alk")
         next
       } else {
         est_level_ages <-
@@ -252,9 +254,9 @@ assign_ages.halk_fit <- function(newdata, object, ...) {
             })
           ) %>%
           tidyr::unnest(.data$est.age) %>%
-          dplyr::select(-.data$data, -.data$alk) %>%
+          dplyr::select(-"data", -"alk") %>%
           dplyr::mutate(alk = levels[i]) %>%
-          dplyr::relocate(.data$alk.n, .after = .data$alk)
+          dplyr::relocate("alk.n", .after = "alk")
       }
 
       est_ages <- dplyr::bind_rows(est_ages, est_level_ages)
@@ -268,7 +270,7 @@ assign_ages.halk_fit <- function(newdata, object, ...) {
       level_alks <-
         level_alks %>%
         dplyr::filter(is.na(!!rlang::sym(levels[i]))) %>%
-        dplyr::select(tidyselect::all_of(temp_levels), .data$alk)
+        dplyr::select(tidyselect::all_of(temp_levels), "alk")
     }
   }
   attr(est_ages, "age_levels") <- levels

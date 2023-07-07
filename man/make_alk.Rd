@@ -44,11 +44,10 @@ older individuals will be included in this plus group}
 number of samples that must be in each age group in order to create an alk}
 
 \item{min_total_sample_size}{Only applicable to alk models. The minimum
-number of samples that must be in data (within level) in order to create an
-alk}
+number of samples that must be in data in order to create an alk}
 
 \item{min_age_groups}{Only applicable to alk models. The minimum number of
-age groups that must be in data (within level) in order to create an alk}
+age groups that must be in data in order to create an alk}
 
 \item{warnings}{Logical. Display warnings (TRUE, default)}
 }

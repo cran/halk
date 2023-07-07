@@ -145,7 +145,7 @@ calc_chi_score <- function(data,
           n.x = ifelse(is.na(.data$n.x), 0, .data$n.x),
           n.y = ifelse(is.na(.data$n.y), 0, .data$n.y)
         ) %>%
-        dplyr::select(-.data$age) %>%
+        dplyr::select(-"age") %>%
         as.matrix() %>%
         t()
       if (return_val == "statistic") {
@@ -252,3 +252,99 @@ calc_mse_ <- function(data,
   }
   return(out)
 }
+
+
+#' Compute the quotient of integrals as a measure of percent error between two
+#' curves
+#'
+#' This is a method for comparing how "close" or "accurate" one curve is to
+#' another (reference) curve. The method works by dividing the area between the
+#' curves by the area under the reference curve. See Details for more
+#' information
+#'
+#' The integral quotient method provides a basis for comparison between two
+#' curves by dividing the area between the curves by the area under the
+#' reference curve (i.e. the quotient of integrals)
+#'
+#' @param ref_curve_params A list of named parameters for the reference curve
+#'   (i.e. the standard that is being compared to)
+#' @param comp_curve_params A list of named parameters for the curve that is
+#'   being compared
+#' @param min_x The minimum value across which to integrate
+#' @param max_x The maximum value across which to integrate
+#' @param curve_fun The function that is being compared. Defaults to an
+#'   anonymous function that is the von Bertalanffy growth function.
+#'
+#' @return A value of the area between curves divided by the area under the
+#'   reference curve
+#' @export
+#'
+#' @examples
+#' ref_curve_params <- list(linf = 60, k = 0.25, t0 = -0.5)
+#' comp_curve_params <- list(linf = 62, k = 0.25, t0 = -0.4)
+#' comp_curve2_params <- list(linf = 65, k = 0.25, t0 = -1)
+#' comp_curve_iq <-
+#'  integral_quotient(ref_curve_params, comp_curve_params, 0, 10)
+#' comp_curve2_iq <-
+#'   integral_quotient(ref_curve_params, comp_curve2_params, 0, 10)
+#' vbgf <- function (x, linf, k, t0) {linf * (1 - exp(-k * (x - t0)))}
+#' curve(
+#'   vbgf(x, ref_curve_params$linf, ref_curve_params$k, ref_curve_params$t0),
+#'   from = 0,
+#'   to = 10,
+#'   ylim = c(0, 60),
+#'   xlab = "Age", ylab = "Length"
+#' )
+#' curve(
+#'   vbgf(x, comp_curve_params$linf, comp_curve_params$k, comp_curve_params$t0),
+#'   add = TRUE,
+#'   col = "blue"
+#' )
+#' curve(
+#'   vbgf(x, comp_curve2_params$linf, comp_curve2_params$k, comp_curve2_params$t0),
+#'   add = TRUE,
+#'   col = "red"
+#' )
+#' text(9, 40, labels = paste0(comp_curve_iq, "%"), col = "blue")
+#' text(9, 43, labels = paste0(comp_curve2_iq, "%"), col = "red")
+integral_quotient <- function(ref_curve_params,
+                              comp_curve_params,
+                              min_x, max_x,
+                              curve_fun = function (x, linf, k, t0) {
+                                out <- linf * (1 - exp(-k * (x - t0)))
+                                return(out)
+                              }) {
+  f <- function(x, ref_curve_params, crv_fn) {
+    out <- do.call(crv_fn, c(list(x = x), ref_curve_params))
+    return(sqrt(out)^2)
+  }
+  f2 <- function(x, ref_curve_params, comp_curve_params, crv_fn) {
+    a <- do.call(crv_fn, c(list(x = x), ref_curve_params))
+    b <- do.call(crv_fn, c(list(x = x), comp_curve_params))
+    out <- sqrt((a - b)^2)
+    return(out)
+  }
+  ref_curve_auc <- tryCatch(
+    stats::integrate(
+      f,
+      lower = min_x,
+      upper = max_x,
+      ref_curve_params = ref_curve_params,
+      crv_fn = curve_fun
+    ),
+    error = function(e) return(list(value = NA))
+  )
+  comp_curve_abc <- tryCatch(
+    stats::integrate(
+      f2,
+      lower = min_x,
+      upper = max_x,
+      ref_curve_params = ref_curve_params,
+      comp_curve_params = comp_curve_params,
+      crv_fn = curve_fun
+    ),
+    error = function(e) return(list(value = NA))
+  )
+  return(round(comp_curve_abc$value / ref_curve_auc$value, 4) * 100)
+}
+

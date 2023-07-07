@@ -154,7 +154,7 @@ fit_age_model.alk <- function(data,
       return(NULL)
     } else {
       out <-
-        dplyr::select(alks, tidyselect::all_of(levels), .data$alk) %>%
+        dplyr::select(alks, tidyselect::all_of(levels), "alk") %>%
         dplyr::arrange(!!!rlang::syms(levels)) %>%
         tibble::as_tibble()
       attr(out, "levels") <- levels
@@ -232,7 +232,7 @@ make_halk <- function(data,
       return(NULL)
     } else {
       out <-
-        dplyr::select(alks, tidyselect::all_of(levels), .data$alk) %>%
+        dplyr::select(alks, tidyselect::all_of(levels), "alk") %>%
         dplyr::arrange(!!!rlang::syms(levels)) %>%
         tibble::as_tibble()
       attr(out, "levels") <- levels
