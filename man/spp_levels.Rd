@@ -20,7 +20,7 @@ rm_spp_level(levels)
 add_spp_level(data, levels)
 }
 \arguments{
-\item{levels}{The levels argument passed from \code{\link{fit_age_model}}}
+\item{levels}{The levels argument passed from \code{\link{make_halk}}}
 
 \item{data}{A data.frame with length-at-age data}
 }

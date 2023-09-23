@@ -9,8 +9,8 @@ assign_ages(newdata, object, ...)
 \arguments{
 \item{newdata}{A vector or data.frame with size/length measurements}
 
-\item{object}{An object of class "alk", "alk_fit", "rf_fit", or "gbm_fit" as
-produced by \code{\link{fit_age_model}}}
+\item{object}{An object of class "alk", "halk_fit" as
+produced by \code{\link{make_alk}} or \code{\link{make_halk}}}
 
 \item{...}{Additional parameters to pass to the S3 object methods}
 }
@@ -22,6 +22,6 @@ on the model provided in \code{object}
 Assign ages to non-aged data based on a fitted age model
 }
 \examples{
-spp_alk <- fit_age_model(spp_data, levels = "spp")
+spp_alk <- make_halk(spp_data, levels = "spp")
 spp_est_ages <- assign_ages(spp_data, spp_alk)
 }

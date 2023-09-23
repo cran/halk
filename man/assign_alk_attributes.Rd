@@ -50,5 +50,5 @@ A data.frame with associated attributes assigned
 \description{
 This is just a helper function to assign the needed attributes and classes
 to a data.frame that is produced by either \code{\link{make_alk}} or
-\code{\link{fit_age_model}}.
+\code{\link{make_halk}}.
 }

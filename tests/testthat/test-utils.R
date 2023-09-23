@@ -20,9 +20,9 @@ test_that("check if spp_levels functions works correctly", {
   level_test <- suppressWarnings(add_spp_level(spp_data, levels = x))
   expect_equal(level_test, y)
   spp_level_test <-
-    suppressWarnings(fit_age_model(spp_data, min_age_sample_size = 2))
+    suppressWarnings(make_halk(spp_data, min_age_sample_size = 2))
   expect_equal(levels(spp_level_test), "spp")
-  expect_warning(fit_age_model(spp_data, min_age_sample_size = 1))
+  expect_warning(make_halk(spp_data, min_age_sample_size = 1))
 })
 
 test_that("ages_as_* functions return correct types", {

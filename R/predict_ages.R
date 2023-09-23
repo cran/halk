@@ -2,6 +2,8 @@
 #' @export
 predict.alk <- function(object, newdata,
                         numbers_col = NULL,
+                        age_below_minlen = min,
+                        age_above_maxlen = max,
                         ...) {
   if (is.null(object)) {
     return(NULL)
@@ -136,9 +138,9 @@ predict.alk <- function(object, newdata,
             if (is.na(x)) {
               return(NA)
             } else if (x < minlen) {
-              return(min(normal_params$age))
+              return(age_below_minlen(normal_params$age))
             } else if (x > maxlen) {
-              return(max(normal_params$age))
+              return(age_above_maxlen(normal_params$age))
             } else {
               prob <- dnorm(x, normal_params$mean, normal_params$sd)
               if (all(prob < 6.691511e-05)) {
@@ -181,8 +183,8 @@ predict.alk <- function(object, newdata,
 
 #' Assign ages to non-aged data based on a fitted age model
 #'
-#' @param object An object of class "alk", "alk_fit", "rf_fit", or "gbm_fit" as
-#' produced by \code{\link{fit_age_model}}
+#' @param object An object of class "alk", "halk_fit" as
+#' produced by \code{\link{make_alk}} or \code{\link{make_halk}}
 #' @param newdata A vector or data.frame with size/length measurements
 #' @param ... Additional parameters to pass to the S3 object methods
 #'
@@ -191,7 +193,7 @@ predict.alk <- function(object, newdata,
 #' @export
 #'
 #' @examples
-#' spp_alk <- fit_age_model(spp_data, levels = "spp")
+#' spp_alk <- make_halk(spp_data, levels = "spp")
 #' spp_est_ages <- assign_ages(spp_data, spp_alk)
 assign_ages <- function(newdata, object, ...) {
   UseMethod("assign_ages", object)

@@ -40,24 +40,24 @@ check_length_data <- function(data, size_col) {
 #' levels.
 #'
 #' @param data A data.frame with length-at-age data
-#' @param levels The levels argument passed from \code{\link{fit_age_model}}
+#' @param levels The levels argument passed from \code{\link{make_halk}}
 #'
 #' @name spp_levels
 #'
 #' @return A character vector of levels possibly with 'spp' or 'species' added
 is_spp_in_levels <- function(levels) {
-  return(any(grepl("^spp$|^species$", levels)))
+  return(any(grepl("^spp$|^species$", levels, ignore.case = TRUE)))
 }
 
 #' @rdname spp_levels
 is_spp_in_data <- function(data) {
-  return(any(grepl("^spp$|^species$", names(data))))
+  return(any(grepl("^spp$|^species$", names(data), ignore.case = TRUE)))
 }
 
 #' @rdname spp_levels
 spp_level <- function(levels) {
   if (is_spp_in_levels(levels)) {
-    return(levels[grep("^spp$|^species$", levels)])
+    return(levels[grep("^spp$|^species$", levels, ignore.case = TRUE)])
   } else {
     return(NULL)
   }
@@ -67,7 +67,7 @@ spp_level <- function(levels) {
 #' @rdname spp_levels
 rm_spp_level <- function(levels) {
   if (is_spp_in_levels(levels)) {
-    out <- levels[-grep("^spp$|^species$", levels)]
+    out <- levels[-grep("^spp$|^species$", levels, ignore.case = TRUE)]
     if (length(out) == 0) {
       return(NULL)
     } else {
@@ -80,7 +80,7 @@ rm_spp_level <- function(levels) {
 
 #' @rdname spp_levels
 add_spp_level <- function(data, levels) {
-  spp_col <- names(data)[grepl("^spp$|^species$", names(data))]
+  spp_col <- names(data)[grepl("^spp$|^species$", names(data), ignore.case = TRUE)]
   if (length(spp_col) == 1) {
     unique_spp <- unique(data[[spp_col]])
     if (length(unique_spp) == 1) {
@@ -361,178 +361,6 @@ bin_lengths <- function(x, binwidth, include_upper = FALSE, ...) {
   return(out)
 }
 
-#' Make an age-length key out of length-at-age data
-#'
-#' @param laa_data A data.frame with length-at-age data
-#' @param sizecol Character string naming the column that holds size data
-#' @param autobin Logical. Should the function automatically assign length bins
-#' (default is TRUE)
-#' @param binwidth Numeric. If \code{autobin = TRUE} this is the width for the
-#' size bins
-#' @param agecol Character string naming the column that holds age data
-#' @param min_age Numeric. All ages less than this value will not be used in
-#' ALK
-#' @param plus_group Numeric value of the oldest age to include in the ALK. All
-#' older individuals will be included in this plus group
-#' @param min_age_sample_size Only applicable to alk models. The minimum
-#' number of samples that must be in each age group in order to create an alk
-#' @param min_total_sample_size Only applicable to alk models. The minimum
-#' number of samples that must be in data in order to create an alk
-#' @param min_age_groups Only applicable to alk models. The minimum number of
-#' age groups that must be in data in order to create an alk
-#' @param numcol Character string naming the column that holds numbers data
-#' @param warnings Logical. Display warnings (TRUE, default)
-#'
-#' @export
-#'
-#' @return A data.frame containing the proportions of records for each size
-#' that are at each age.
-#'
-#' @examples
-#' make_alk(laa_data)
-make_alk <- function(laa_data,
-                     sizecol = "length",
-                     autobin = TRUE,
-                     binwidth = 1,
-                     agecol = "age",
-                     min_age = NULL,
-                     plus_group = NULL,
-                     numcol = NULL,
-                     min_age_sample_size = 5,
-                     min_total_sample_size =
-                      min_age_sample_size * min_age_groups,
-                     min_age_groups = 5,
-                     warnings = TRUE) {
-
-  laa_data <- check_laa_data(laa_data, quiet = !warnings)
-  if (is.null(laa_data)) {
-    return(NULL)
-  }
-  laa_data <-
-    laa_data %>%
-    rename_laa_cols(size_col = sizecol, age_col = agecol, num_col = numcol) %>%
-    sanitize_laa_data() %>%
-    adjust_plus_min_ages_df(minage = min_age, pls_grp = plus_group) %>%
-    min_age_groups(sub_levels = NULL, min_age_grps = min_age_groups) %>%
-    min_count_laa_data(
-      sub_levels = NULL,
-      min_age_sample_size,
-      min_total_sample_size,
-      min_age_groups
-    )
-  laa_data <- check_laa_data(laa_data, quiet = TRUE)
-  if (is.null(laa_data)) {
-    if (warnings) {
-      warning(
-        "Your length-at-age data did not have enough samples or age groups.\n",
-        "Consider changing min_age_sample_size, min_total_sample_size, or ",
-        "min_age_groups."
-      )
-    }
-    return(NULL)
-  }
-  if (!is.null(min_age)) {
-    laa_data <-
-      laa_data %>%
-      dplyr::filter(.data$age >= min_age)
-  }
-  if (!is.null(plus_group)) {
-    laa_data <-
-      laa_data %>%
-      dplyr::mutate(age = dplyr::case_when(
-        .data$age > plus_group ~ as.integer(plus_group),
-        TRUE ~ as.integer(.data$age)
-      ))
-  }
-  if (autobin) {
-    if (binwidth <= 1) {
-      if (!is.null(numcol)) {
-        laa_data <-
-          laa_data %>%
-          tidyr::uncount(!!rlang::sym(numcol))
-      }
-      alk_normdist <-
-        laa_data %>%
-        dplyr::group_by(.data$age) %>%
-        dplyr::summarize(
-          mean = mean(.data$length, na.rm = TRUE),
-          sd = sd(.data$length, na.rm = TRUE)
-        ) %>%
-        dplyr::mutate(sd = dplyr::case_when(
-          .data$sd == 0 ~ 0.3,
-          is.na(.data$sd) ~ 0.3,
-          TRUE ~ .data$sd
-        ))
-    } else {
-      alk_normdist <- NULL
-    }
-    laa_data <-
-      laa_data %>%
-      dplyr::mutate(length = bin_lengths(.data$length, binwidth))
-  } else {
-    alk_normdist <- NULL
-  }
-  if (is.null(numcol)) {
-    number_at_length <-
-      laa_data %>%
-      dplyr::count(.data$age, .data$length)
-  } else {
-    number_at_length <-
-      laa_data %>%
-      dplyr::group_by(.data$age, .data$length) %>%
-      dplyr::summarize(n = sum(!!rlang::sym(numcol)))
-  }
-  age_proportions <-
-    number_at_length %>%
-    dplyr::mutate(n = ifelse(is.na(.data$n), 0, .data$n)) %>%
-    dplyr::group_by(.data$length) %>%
-    dplyr::mutate(prop = .data$n / sum(.data$n)) %>%
-    dplyr::select("age", "length", "prop") %>%
-    dplyr::ungroup()
-  if (!is.null(plus_group)) {
-    age_props <-
-      age_proportions %>%
-      dplyr::mutate(age = dplyr::case_when(
-        .data$age >= plus_group ~ paste0("age", plus_group, "+"),
-        TRUE ~ paste0("age", .data$age)
-      ))
-  } else {
-    age_props <-
-      age_proportions %>%
-      dplyr::mutate(age = paste0("age", .data$age))
-  }
-  alk <-
-    age_props %>%
-    dplyr::mutate(prop = dplyr::case_when(
-      is.na(.data$prop) ~ 0,
-      is.nan(.data$prop) ~ 0,
-      TRUE ~ .data$prop
-    )) %>%
-    tidyr::pivot_wider(
-      id_cols = "length",
-      names_from = "age",
-      values_from = "prop",
-      values_fill = 0
-    ) %>%
-    dplyr::arrange(.data$length)
-  alk <-
-    rename_laa_cols(
-      alk, size_col = sizecol, age_col = agecol, num_col = numcol, goback = TRUE
-    ) %>%
-    assign_alk_attributes(
-      size_col = sizecol,
-      age_col = agecol,
-      autobin = autobin,
-      size_bin = binwidth,
-      min_age = min_age,
-      plus_group = plus_group,
-      alk_n = nrow(laa_data),
-      classes = "alk",
-      dnorm_params = alk_normdist
-    )
-  return(alk)
-}
-
 check_laa_data <- function(df, quiet = FALSE) {
   if (is.null(df) || nrow(df) == 0) {
     if (!quiet) {
@@ -651,7 +479,7 @@ rename_num_col <- function(data, nc = "n", back = FALSE) {
 #'
 #' This is just a helper function to assign the needed attributes and classes
 #' to a data.frame that is produced by either \code{\link{make_alk}} or
-#' \code{\link{fit_age_model}}.
+#' \code{\link{make_halk}}.
 #'
 #' @param data A data.frame
 #' @param size_col Character. Name of the column representing sizes
@@ -696,5 +524,16 @@ assign_alk_attributes <- function(data,
   }
   class(data)  <- c(classes, class(data))
   return(data)
+}
+
+#' Simple function that returns NA values
+#'
+#' A vector of NA will be returned that is the length of \code{x}
+#'
+#' @param x Any vector of any length
+#'
+#' @return A vector the same length as x containing only NA values
+assign_na_age <- function(x) {
+  return(NA)
 }
 

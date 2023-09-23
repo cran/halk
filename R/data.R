@@ -59,7 +59,7 @@
 #'
 #' Simple age-structured population with age and/or length records, but
 #' expanded across multiple counties and waterbodies for tests and examples
-#' in \code{\link{fit_age_model}} used with levels.
+#' in \code{\link{make_halk}} used with levels.
 #' 
 #' @name wb_spp_data
 #'

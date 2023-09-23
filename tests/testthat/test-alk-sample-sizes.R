@@ -11,16 +11,16 @@ test_that("make_alk correctly creates ALK when supposed to", {
   expect_type(make_alk(laa_data_few_ages, min_age_groups = 2), "list")
 })
 
-test_that("fit_age_model correctly creates ALK for species when supposed to", {
-  expect_type(fit_age_model(spp_data, levels = "spp"), "list")
+test_that("make_halk correctly creates ALK for species when supposed to", {
+  expect_type(make_halk(spp_data, levels = "spp"), "list")
   expect_warning(
-    fit_age_model(spp_data, levels = "spp", min_total_sample_size = 1000)
+    make_halk(spp_data, levels = "spp", min_total_sample_size = 1000)
   )
   expect_warning(
-    fit_age_model(spp_data_low_n, levels = "spp", min_total_sample_size = 30)
+    make_halk(spp_data_low_n, levels = "spp", min_total_sample_size = 30)
   )
   expect_type(
-    fit_age_model(
+    make_halk(
       spp_data_low_n, levels = "spp",
       min_age_groups = 3,
       min_total_sample_size = 20
@@ -28,15 +28,15 @@ test_that("fit_age_model correctly creates ALK for species when supposed to", {
     "list"
   )
   expect_warning(
-    fit_age_model(spp_data_low_age_n, levels = "spp", min_age_groups = 6)
+    make_halk(spp_data_low_age_n, levels = "spp", min_age_groups = 6)
   )
   expect_type(
-    fit_age_model(spp_data_low_age_n, levels = "spp", min_age_sample_size = 1),
+    make_halk(spp_data_low_age_n, levels = "spp", min_age_sample_size = 1),
     "list"
   )
-  expect_warning(fit_age_model(spp_data_few_ages, levels = "spp"))
+  expect_warning(make_halk(spp_data_few_ages, levels = "spp"))
   expect_type(
-    fit_age_model(spp_data_few_ages, levels = "spp", min_age_groups = 2),
+    make_halk(spp_data_few_ages, levels = "spp", min_age_groups = 2),
     "list"
   )
 })

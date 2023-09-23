@@ -59,7 +59,7 @@ assign_attributes_test <- function(data, alk_class = "halk_fit", levels=NULL) {
   return(data)
 }
 
-test_that("alk_fit method for fit_age_model works correctly", {
+test_that("make_alk works correctly", {
   exp_alk <-
     make_alk(laa_data) %>%
     assign_attributes_test(alk_class = NULL)
@@ -92,14 +92,14 @@ test_that("alk_fit method for fit_age_model works correctly", {
     dplyr::ungroup() %>%
     dplyr::arrange(spp, county, waterbody) %>%
     assign_attributes_test(levels = c("spp", "county", "waterbody"))
-  test_alk <- fit_age_model(laa_data, model = "alk")
-  test_spp_alk <- fit_age_model(
+  test_alk <- make_alk(laa_data)
+  test_spp_alk <- make_halk(
     spp_data,
     levels = "spp",
     min_age_sample_size = 1,
     min_total_sample_size = 1
   )
-  test_wb_spp_alk <- fit_age_model(
+  test_wb_spp_alk <- make_halk(
     wb_spp_data,
     levels = c("spp", "county", "waterbody"),
     min_age_sample_size = 1,
