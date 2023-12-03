@@ -35,7 +35,11 @@ predict.alk <- function(object, newdata,
     }
   }
   object <- rename_laa_cols(object, size_col, age_col, num_col = numbers_col)
-  if (!autobin) {
+  if (all(is.na(newdata$length))) {
+    out <-
+      newdata %>%
+      dplyr::mutate(est.age = NA, alk.n = NA)
+  } else if (!autobin) {
     out <-
       newdata %>%
       dplyr::group_by(.data$length) %>%
@@ -84,7 +88,7 @@ predict.alk <- function(object, newdata,
     out <-
       newdata %>%
       dplyr::mutate(
-        rounded_length = bin_lengths(!!rlang::sym(size_col), size_bin)
+        rounded_length = bin_lengths(.data$length, size_bin)
       ) %>%
       dplyr::group_by(.data$rounded_length) %>%
       # get the total number in each rounded length
@@ -129,8 +133,8 @@ predict.alk <- function(object, newdata,
       if (autobin & size_bin <= 1) {
         normal_params <- attr(object, "dnorm_params")
         # get min and max lengths and ages
-        minlen <- min(object[,size_col])
-        maxlen <- max(object[,size_col])
+        minlen <- min(object$length)
+        maxlen <- max(object$length)
         # assign age to missing rows based on normal params from alk inputs
         non_missing_ages <-
           missing_ages %>%
@@ -167,7 +171,8 @@ predict.alk <- function(object, newdata,
       rename_laa_cols(
         size_col = size_col,
         age_col = age_col,
-        num_col = numbers_col
+        num_col = numbers_col,
+        goback = TRUE
       )
   }
   out <-

@@ -2,7 +2,7 @@ Package: halk
 Type: Package
 Title: Methods to Create Hierarchical Age Length Keys for Age
         Assignment
-Version: 0.0.4
+Version: 0.0.5
 Authors@R: c(person(given = "Paul",
            family = "Frater",
            role = c("aut", "cre"),
@@ -23,7 +23,7 @@ LazyData: true
 RoxygenNote: 7.2.3
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2023-09-23 03:00:21 UTC; paul
+Packaged: 2023-12-03 03:37:25 UTC; paul
 Author: Paul Frater [aut, cre] (<https://orcid.org/0000-0002-7237-6563>)
 Repository: CRAN
-Date/Publication: 2023-09-23 05:40:02 UTC
+Date/Publication: 2023-12-03 04:20:02 UTC

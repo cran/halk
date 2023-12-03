@@ -214,6 +214,15 @@ make_halk <- function(data,
       stop("Each level supplied must match a column in the data.")
     }
   }
+  drop_na_data <-
+    data %>%
+    tidyr::drop_na(tidyselect::all_of(levels))
+  if (nrow(drop_na_data) != nrow(data)) {
+    warning(
+      "Some records in `data` contained NA in columns specified in `levels`. ",
+      "These records have been removed."
+    )
+  }
   temp_levels <- levels
   alks <-
     tibble::as_tibble(data[FALSE, ]) %>%
